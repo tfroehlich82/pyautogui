@@ -30,7 +30,7 @@ You will need PIL/Pillow to use the screenshot features.
 from __future__ import absolute_import, division, print_function
 
 
-__version__ = '0.9.32'
+__version__ = '0.9.33'
 
 import collections
 import sys
@@ -997,10 +997,7 @@ def hotkey(*args, **kwargs):
         platformModule._keyUp(c)
         time.sleep(interval)
 
-    if kwargs.get('pause', None) is not None and _pause:
-        time.sleep(pause)
-    elif kwargs.get('_pause', True) and PAUSE != 0:
-        time.sleep(PAUSE)
+    _autoPause(kwargs.get('pause', None), kwargs.get('_pause', True))
 
 
 class FailSafeException(Exception):
