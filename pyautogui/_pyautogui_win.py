@@ -10,6 +10,11 @@ import sys
 if sys.platform !=  'win32':
     raise Exception('The pyautogui_win module should only be loaded on a Windows system.')
 
+
+# Fixes the scaling issues where PyAutoGUI was reporting the wrong resolution:
+ctypes.windll.user32.SetProcessDPIAware()
+
+
 """
 A lot of this code is probably repeated from win32 extensions module, but I didn't want to have that dependency.
 
@@ -288,17 +293,17 @@ def _keyDown(key):
             vkCode -= 0x100
             needsShift = True
     """
+    mods, vkCode = divmod(keyboardMapping[key], 0x100)
 
-    vkCode = keyboardMapping[key]
-    if vkCode > 0x100: # the vk code will be > 0x100 if it needs shift
-        vkCode -= 0x100
-        needsShift = True
-
-    if needsShift:
-        ctypes.windll.user32.keybd_event(0x10, 0, 0, 0) # 0x10 is VK_SHIFT
+    for apply_mod, vk_mod in [(mods & 4, 0x12), (mods & 2, 0x11),
+        (mods & 1 or needsShift, 0x10)]: #HANKAKU not suported! mods & 8
+        if apply_mod:
+            ctypes.windll.user32.keybd_event(vk_mod, 0, 0, 0) #
     ctypes.windll.user32.keybd_event(vkCode, 0, 0, 0)
-    if needsShift:
-        ctypes.windll.user32.keybd_event(0x10, 0, KEYEVENTF_KEYUP, 0) # 0x10 is VK_SHIFT
+    for apply_mod, vk_mod in [(mods & 1 or needsShift, 0x10), (mods & 2, 0x11),
+        (mods & 4, 0x12)]: #HANKAKU not suported! mods & 8
+        if apply_mod:
+            ctypes.windll.user32.keybd_event(vk_mod, 0, KEYEVENTF_KEYUP, 0) #
 
 
 def _keyUp(key):
@@ -328,16 +333,17 @@ def _keyUp(key):
             vkCode -= 0x100
             needsShift = True
     """
-    vkCode = keyboardMapping[key]
-    if vkCode > 0x100: # the vk code will be > 0x100 if it needs shift
-        vkCode -= 0x100
-        needsShift = True
+    mods, vkCode = divmod(keyboardMapping[key], 0x100)
 
-    if needsShift:
-        ctypes.windll.user32.keybd_event(0x10, 0, 0, 0) # 0x10 is VK_SHIFT
+    for apply_mod, vk_mod in [(mods & 4, 0x12), (mods & 2, 0x11),
+        (mods & 1 or needsShift, 0x10)]: #HANKAKU not suported! mods & 8
+        if apply_mod:
+            ctypes.windll.user32.keybd_event(vk_mod, 0, 0, 0) #
     ctypes.windll.user32.keybd_event(vkCode, 0, KEYEVENTF_KEYUP, 0)
-    if needsShift:
-        ctypes.windll.user32.keybd_event(0x10, 0, KEYEVENTF_KEYUP, 0) # 0x10 is VK_SHIFT
+    for apply_mod, vk_mod in [(mods & 1 or needsShift, 0x10), (mods & 2, 0x11),
+        (mods & 4, 0x12)]: #HANKAKU not suported! mods & 8
+        if apply_mod:
+            ctypes.windll.user32.keybd_event(vk_mod, 0, KEYEVENTF_KEYUP, 0) #
 
 
 def _position():
@@ -390,11 +396,20 @@ def _mouseDown(x, y, button):
       None
     """
     if button == 'left':
-        _sendMouseEvent(MOUSEEVENTF_LEFTDOWN, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_LEFTDOWN, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     elif button == 'middle':
-        _sendMouseEvent(MOUSEEVENTF_MIDDLEDOWN, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_MIDDLEDOWN, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     elif button == 'right':
-        _sendMouseEvent(MOUSEEVENTF_RIGHTDOWN, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_RIGHTDOWN, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     else:
         assert False, "button argument not in ('left', 'middle', 'right')"
 
@@ -412,11 +427,20 @@ def _mouseUp(x, y, button):
       None
     """
     if button == 'left':
-        _sendMouseEvent(MOUSEEVENTF_LEFTUP, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_LEFTUP, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     elif button == 'middle':
-        _sendMouseEvent(MOUSEEVENTF_MIDDLEUP, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_MIDDLEUP, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     elif button == 'right':
-        _sendMouseEvent(MOUSEEVENTF_RIGHTUP, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_RIGHTUP, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     else:
         assert False, "button argument not in ('left', 'middle', 'right')"
 
@@ -434,11 +458,20 @@ def _click(x, y, button):
       None
     """
     if button == 'left':
-        _sendMouseEvent(MOUSEEVENTF_LEFTCLICK, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_LEFTCLICK, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     elif button == 'middle':
-        _sendMouseEvent(MOUSEEVENTF_MIDDLECLICK, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_MIDDLECLICK, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     elif button == 'right':
-        _sendMouseEvent(MOUSEEVENTF_RIGHTCLICK, x, y)
+        try:
+            _sendMouseEvent(MOUSEEVENTF_RIGHTCLICK, x, y)
+        except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
     else:
         assert False, "button argument not in ('left', 'middle', 'right')"
 
@@ -476,8 +509,9 @@ def _sendMouseEvent(ev, x, y, dwData=0):
     convertedY = 65536 * y // height + 1
     ctypes.windll.user32.mouse_event(ev, ctypes.c_long(convertedX), ctypes.c_long(convertedY), dwData, 0)
 
-    if ctypes.windll.kernel32.GetLastError() != 0:
-        raise ctypes.WinError()
+    # TODO: Too many false positives with this code: See: https://github.com/asweigart/pyautogui/issues/108
+    #if ctypes.windll.kernel32.GetLastError() != 0:
+    #    raise ctypes.WinError()
 
 
 def _scroll(clicks, x=None, y=None):
@@ -511,7 +545,10 @@ def _scroll(clicks, x=None, y=None):
         elif y >= height:
             y = height - 1
 
-    _sendMouseEvent(MOUSEEVENTF_WHEEL, x, y, dwData=clicks)
+    try:
+        _sendMouseEvent(MOUSEEVENTF_WHEEL, x, y, dwData=clicks)
+    except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
+            pass
 
 
 def _hscroll(clicks, x, y):
